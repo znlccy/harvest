@@ -59,6 +59,8 @@ class Harvest extends BasicController {
             ->where('status', '=', '1')
             ->paginate($page_size, false, ['page' => $jump_page]);
 
+        /* 加入上一页和下一页和最新列表 */
+
         if ($harvest) {
             return $this->return_message(Code::SUCCESS, '获取成果列表成功', $harvest);
         } else {

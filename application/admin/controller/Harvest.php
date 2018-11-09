@@ -44,8 +44,8 @@ class Harvest extends BasisController {
         $create_end = request()->param('create_end');
         $update_start = request()->param('update_start');
         $update_end = request()->param('update_end');
-        $page_size = request()->param('page_size');
-        $jump_page = request()->param('jump_page');
+        $page_size = request()->param('page_size', $this->harvest_page['PAGE_SIZE']);
+        $jump_page = request()->param('jump_page', $this->harvest_page['JUMP_PAGE']);
 
         /* 验证数据 */
         $validate_data = [

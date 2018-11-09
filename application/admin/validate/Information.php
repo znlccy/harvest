@@ -11,4 +11,22 @@ namespace app\admin\validate;
 
 class Information extends BasisValidate {
 
+    /* 验证规则 */
+    protected $rule = [
+        'id'            => 'number',
+    ];
+
+    /* 验证字段 */
+    protected $field = [
+        'id'            => '消息主键'
+    ];
+
+    /* 验证场景 */
+    protected $scene = [
+        'listing'       => [],
+        'save'          => [],
+        'detail'        => ['id' => 'require|number'],
+        'delete'        => ['id' => 'require|number']
+    ];
+
 }
