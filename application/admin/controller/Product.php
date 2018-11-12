@@ -51,13 +51,14 @@ class Product extends BasisController {
         /* 移动文件 */
         if ($detail) {
             $config = [
-                'ext'   => 'rar, zip',
+                'ext'       => 'rar,zip'
             ];
-
-            $info = $detail->validate($config)->move(ROOT_PATH . 'public' . DS . 'images');
+            $info = $detail->validate($config)->move(ROOT_PATH  . 'public' . DS . 'images');
             if ($info) {
                 $sub_path = str_replace('\\', '/', $info->getSaveName());
-                $detail = "/images" . $sub_path;
+                $detail = '/images/' . $sub_path;
+            } else {
+                return $this->return_message(Code::INVALID, '文件格式不正确，只允许rar和zip格式');
             }
         }
 
@@ -65,8 +66,32 @@ class Product extends BasisController {
         $validate_data = [
             'id'            => $id,
             'name'          => $name,
-            'description'   => $description
+            'description'   => $description,
+            'detail'        => $detail
         ];
+
+        /* 验证结果 */
+        $result = $this->product_validate->scene('save')->check($validate_data);
+
+        if (true !== $result) {
+            return $this->return_message(Code::INVALID, $this->product_validate->getError());
+        }
+
+        /* 返回数据 */
+        if (empty($id)) {
+            $product = $this->product_model->save($validate_data);
+        } else {
+            if (empty($validate_data['detail'])) {
+                unset($validate_data['detail']);
+            }
+            $product = $this->product_model->save($validate_data, ['id' => $id]);
+        }
+
+        if ($product) {
+            return $this->return_message(Code::SUCCESS, '数据操作成功');
+        } else {
+            return $this->return_message(Code::FAILURE, '数据操作失败');
+        }
     }
 
     /* 成果详情 */

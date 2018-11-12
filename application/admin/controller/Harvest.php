@@ -121,7 +121,7 @@ class Harvest extends BasisController {
             $info = $picture->validate($config)->move(ROOT_PATH  . 'public' . DS . 'images');
             if ($info) {
                 $sub_path = str_replace('\\', '/', $info->getSaveName());
-                $picture = '/images' . $sub_path;
+                $picture = '/images/' . $sub_path;
             } else {
                 return $this->return_message(Code::INVALID, '图片格式不正确');
             }
