@@ -3,15 +3,14 @@
  * Created by PhpStorm.
  * User: Administrator
  * Date: 2018/8/15
- * Time: 12:03
- * Comment: 权限模型
+ * Time: 13:35
+ * Comment: 短信验证码模型
  */
-namespace app\admin\model;
+namespace app\index\model;
 
-class Permission extends BasisModel {
+class Sms extends BasicModel {
 
     /**
-     * 自动写入和读取时间
      * @var string
      */
     protected $autoWriteTimestamp = 'datetime';
@@ -20,6 +19,5 @@ class Permission extends BasisModel {
      * 关联的数据表
      * @var string
      */
-    protected $table = 'tb_permission';
-
+    protected $table = 'tb_sms';
 }

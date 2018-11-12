@@ -4,14 +4,14 @@
  * User: Administrator
  * Date: 2018/8/15
  * Time: 12:03
- * Comment: 权限模型
+ * Comment: 管理员角色模型
  */
 namespace app\admin\model;
 
-class Permission extends BasisModel {
+class AdminRole extends BasisModel {
 
     /**
-     * 自动写入和读取时间
+     * 自动写入读取时间
      * @var string
      */
     protected $autoWriteTimestamp = 'datetime';
@@ -20,6 +20,6 @@ class Permission extends BasisModel {
      * 关联的数据表
      * @var string
      */
-    protected $table = 'tb_permission';
+    protected $table = 'tb_admin_role';
 
 }

@@ -2,19 +2,25 @@
 /**
  * Created by PhpStorm.
  * User: Administrator
- * Date: 2018/11/9
- * Time: 15:45
- * Comment: 消息模型
+ * Date: 2018/8/15
+ * Time: 13:35
+ * Comment: 通知消息模型
  */
 
 namespace app\admin\model;
 
 class Information extends BasisModel {
 
-    /* 读存时间 */
+    /**
+     * 自动写入和读取时间
+     * @var string
+     */
     protected $autoWriteTimestamp = 'datetime';
 
-    /* 对应的表 */
+    /**
+     * 关联的数据表
+     * @var string
+     */
     protected $table = 'tb_information';
 
 }

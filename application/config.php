@@ -237,9 +237,63 @@ return [
         'list_rows' => 15,
     ],
 
-    /* 分页配置 */
-    'pagination'    => [
-        'PAGE_SIZE' => 8,
-        'JUMP_PAGE' => 1
+    //数据迁移
+    'migration' => [
+        'path' => ROOT_PATH .'vendor/gmars/tp5-rbac/'
+    ],
+
+    //分页配置
+    'paginate'               => [
+        'type'      => 'bootstrap',
+        'var_page'  => 'page',
+        'list_rows' => 15,
+    ],
+
+    //一般短信验证码
+    'sms'           => [
+        'url'       => 'https://api.mysubmail.com/message/xsend.json',
+        'appid'     => '13363',
+        'project'   => 'TjMOF3',
+        'signature' => '3432bfd823119abb670aa0618c388b4f'
+    ],
+
+    //审核通过验证码
+    'auth_pass_sms' => [
+        'url'       => 'https://api.mysubmail.com/message/xsend.json',
+        'appid'     => '13363',
+        'project'   => 'LRTDB',
+        'signature' => '3432bfd823119abb670aa0618c388b4f'
+    ],
+
+    //审核失败验证码
+    'auth_fail_sms' => [
+        'url'       => 'https://api.mysubmail.com/message/xsend.json',
+        'appid'     => '13363',
+        'project'   => '8Q1iK1',
+        'signature' => '3432bfd823119abb670aa0618c388b4f'
+    ],
+
+    //图片验证码
+    'captcha'       => [
+        // 验证码字符集合
+        'codeSet' => '12345678abcdefhijkmnpqrstuvwxyzABCDEFGHJKLMNPQRTUVWXY',
+        //字体大小
+        'fontSize'  => 17,
+        //验证码长度
+        'length'    => 4,
+        //是否画混淆曲线
+        'useCurve'  => false,
+        //验证码图片高度
+        'imageH'    => 35,
+        //验证码图片宽度
+        'imageW'    => 150,
+        //验证成功后是否重置
+        'reset'     => true
+    ],
+
+    //分页配置
+    'pagination'            => [
+        'PAGE_SIZE'         => 8,
+        'JUMP_PAGE'         => 1
     ],
 ];
