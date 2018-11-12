@@ -47,8 +47,8 @@ class Information extends BasisController {
         $update_end = request()->param('update_end');
         $publish_start = request()->param('publish_start');
         $publish_end = request()->param('publish_end');
-        $page_size = request()->param('page_size');
-        $jump_page = request()->param('jump_page');
+        $page_size = request()->param('page_size', $this->information_page['PAGE_SIZE']);
+        $jump_page = request()->param('jump_page' ,$this->information_page['JUMP_PAGE']);
 
         /* 验证参数 */
         $validate_data = [

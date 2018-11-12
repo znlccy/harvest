@@ -180,6 +180,31 @@ class Harvest extends BasisController {
         } else {
             return $this->return_message(Code::FAILURE, '获取成果详情失败');
         }
+
+        /* 上一页数据 */
+        /*$prev = Db::table('tb_review')
+            ->field('richtext,recommend',true)
+            ->where('id', '<', $id)
+            ->order('id desc')
+            ->find();*/
+
+        /* 下一页数据 */
+        /*$next = Db::table('tb_review')
+            ->field('richtext,recommend',true)
+            ->where('id', '>', $id)
+            ->order('id asc')
+            ->find();*/
+
+        /* 最新活动回顾 */
+        /*$lastreview = Db::table('tb_review')
+            ->field('richtext,recommend',true)
+            ->where('id', '<>', $id)
+            ->order('recommend', 'desc')
+            ->order('id', 'desc')
+            ->limit(10)
+            ->select();
+
+        $data = array_merge(['prev' => $prev], ['next' => $next], ['detail' => $return_review], ['lastreview' => $lastreview]);*/
     }
 
     /* 成果删除 */
