@@ -38,11 +38,138 @@ class Information extends BasisController {
 
         /* 接收参数 */
         $id = request()->param('id');
+        $status = request()->param('status');
+        $title = request()->param('title');
+        $publisher = request()->param('publisher');
+        $create_start = request()->param('create_start');
+        $create_end = request()->param('create_end');
+        $update_start = request()->param('update_start');
+        $update_end = request()->param('update_end');
+        $publish_start = request()->param('publish_start');
+        $publish_end = request()->param('publish_end');
+        $page_size = request()->param('page_size');
+        $jump_page = request()->param('jump_page');
+
+        /* 验证参数 */
+        $validate_data = [
+            'id'            => $id,
+            'status'        => $status,
+            'title'         => $title,
+            'publisher'     => $publisher,
+            'create_start'  => $create_start,
+            'create_end'    => $create_end,
+            'update_start'  => $update_start,
+            'update_end'    => $update_end,
+            'publish_start' => $publish_start,
+            'publish_end'   => $publish_end,
+            'page_size'     => $page_size,
+            'jump_page'     => $jump_page
+        ];
+
+        /* 验证结果 */
+        $result = $this->information_validate->scene('listing')->check($validate_data);
+
+        if (true !== $result) {
+            return $this->return_message(Code::INVALID, $this->information_validate->getError());
+        }
+
+        /* 筛选条件 */
+        $conditions = [];
+
+        if ($id) {
+            $conditions['id'] = $id;
+        }
+
+        if (is_null($status)) {
+            $conditions['status'] = ['in',[0,1]];
+        } else {
+            switch ($status) {
+                case 0:
+                    $conditions['status'] = $status;
+                    break;
+                case 1:
+                    $conditions['status'] = $status;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if ($title) {
+            $conditions['title'] = ['like', '%' . $title . '%'];
+        }
+
+        if ($publisher) {
+            $conditions['publisher'] = ['like', '%' . $publisher . '%'];
+        }
+
+        if ($create_start && $create_end) {
+            $conditions['create_time'] = ['between time', [$create_start, $create_end]];
+        }
+
+        if ($update_start && $update_end) {
+            $conditions['update_time'] = ['between time', [$update_start, $update_end]];
+        }
+
+        if ($publish_start && $publish_end) {
+            $conditions['publish_time'] = ['between time', [$publish_start, $publish_end]];
+        }
+
+        /* 返回结果 */
+        $information = $this->information_model
+            ->where($conditions)
+            ->order('id', 'asc')
+            ->paginate($page_size, false, ['page' => $jump_page]);
+
+        if ($information) {
+            return $this->return_message(Code::SUCCESS, '获取通知消息成功', $information);
+        } else {
+            return $this->return_message(Code::FAILURE, '获取通知消息失败');
+        }
     }
 
     /* 消息保存添加 */
     public function save() {
 
+        /* 接收参数 */
+        $id = request()->param('id');
+        $title = request()->param('title');
+        $publisher = session('admin.id');
+        $status = request()->param('status');
+        $publish_time = date('Y-m-d H:i:s', time());
+        $rich_text = request()->param('rich_text');
+
+        /* 验证参数 */
+        $validate_data = [
+            'id'            => $id,
+            'title'         => $title,
+            'status'        => $status,
+            'publisher'     => $publisher,
+            'publish_time'  => $publish_time,
+            'rich_text'     => $rich_text
+        ];
+
+        /* 验证结果 */
+        $result = $this->information_validate->scene('save')->check($validate_data);
+
+        if (true !== $result) {
+            return $this->return_message(Code::INVALID, $this->information_validate->getError());
+        }
+
+        /* 返回结果 */
+        if (!empty($id)) {
+            /* 更新数据 */
+            $information = $this->information_model->save($validate_data, ['id' => $id]);
+        } else {
+            /* 保存数据 */
+            $information = $this->information_model->save($validate_data);
+        }
+
+        if ($information) {
+            return $this->return_message(Code::SUCCESS, '数据操作成功');
+        } else {
+            return $this->return_message(Code::FAILURE, '数据操作失败');
+        }
     }
 
     /* 消息详情 */
