@@ -273,7 +273,7 @@ return [
         'signature' => '3432bfd823119abb670aa0618c388b4f'
     ],
 
-    //图片验证码
+    //图片验证码m
     'captcha'       => [
         // 验证码字符集合
         'codeSet' => '12345678abcdefhijkmnpqrstuvwxyzABCDEFGHJKLMNPQRTUVWXY',

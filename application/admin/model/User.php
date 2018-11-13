@@ -16,4 +16,9 @@ class User extends BasisModel {
 
     /* 对应的表 */
     protected $table = 'tb_user';
+
+    /* 关联的表 */
+    public function products() {
+        return $this->belongsToMany('Product', 'tb_user_product', 'product_id', 'user_id');
+    }
 }
