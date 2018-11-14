@@ -124,20 +124,6 @@ class Product extends BasisController {
         $description = request()->param('description');
         $detail = request()->file('detail');
 
-        /* 移动文件 */
-        if ($detail) {
-            $config = [
-                'ext'       => 'rar,zip'
-            ];
-            $info = $detail->validate($config)->move(ROOT_PATH  . 'public' . DS . 'images');
-            if ($info) {
-                $sub_path = str_replace('\\', '/', $info->getSaveName());
-                $detail = '/images/' . $sub_path;
-            } else {
-                return $this->return_message(Code::INVALID, '文件格式不正确，只允许rar和zip格式');
-            }
-        }
-
         /* 验证参数 */
         $validate_data = [
             'id'            => $id,
@@ -151,6 +137,20 @@ class Product extends BasisController {
 
         if (true !== $result) {
             return $this->return_message(Code::INVALID, $this->product_validate->getError());
+        }
+
+        /* 移动文件 */
+        if ($detail) {
+            $config = [
+                'ext'       => 'rar,zip'
+            ];
+            $info = $detail->validate($config)->move(ROOT_PATH  . 'public' . DS . 'images');
+            if ($info) {
+                $sub_path = str_replace('\\', '/', $info->getSaveName());
+                $detail = '/images/' . $sub_path;
+            } else {
+                return $this->return_message(Code::INVALID, '文件格式不正确，只允许rar和zip格式');
+            }
         }
 
         /* 返回数据 */

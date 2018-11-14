@@ -149,6 +149,17 @@ class Harvest extends BasisController {
         $picture = request()->file('picture');
         $rich_text = request()->param('rich_text');
 
+        /* 验证数据 */
+        $validate_data = [
+            'id'            => $id,
+            'name'          => $name,
+            'description'   => $description,
+            'status'        => $status,
+            'recommend'     => $recommend,
+            'rich_text'     => $rich_text,
+            'picture'       => $picture
+        ];
+
         /* 移动图片 */
         if ($picture) {
             $config = [
@@ -162,17 +173,6 @@ class Harvest extends BasisController {
                 return $this->return_message(Code::INVALID, '图片格式不正确');
             }
         }
-
-        /* 验证数据 */
-        $validate_data = [
-            'id'            => $id,
-            'name'          => $name,
-            'description'   => $description,
-            'status'        => $status,
-            'recommend'     => $recommend,
-            'rich_text'     => $rich_text,
-            'picture'       => $picture
-        ];
 
         /* 验证结果 */
         $result = $this->harvest_validate->scene('save')->check($validate_data);

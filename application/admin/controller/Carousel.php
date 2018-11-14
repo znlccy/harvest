@@ -149,20 +149,6 @@ class Carousel extends BasisController {
         $description = request()->param('description');
         $publish_time = date('Y-m-d H:i:s',time());
 
-        /* 移动图片 */
-        if ($picture) {
-            $config = [
-                'ext'  => 'jpg,gif,png,bmp,jpeg'
-            ];
-            $info = $picture->validate($config)->move(ROOT_PATH . 'public' . DS . 'images');
-            if ($info) {
-                $sub_path = str_replace('\\', '/', $info->getSaveName());
-                $picture = '/images' . $sub_path;
-            } else {
-                return $this->return_message(Code::INVALID, '文件图片格式不对');
-            }
-        }
-
         /* 验证参数 */
         $validate_data = [
             'id'            => $id,
@@ -174,6 +160,20 @@ class Carousel extends BasisController {
             'description'   => $description,
             'publish_time'  => $publish_time
         ];
+
+        /* 移动图片 */
+        if ($picture) {
+            $config = [
+                'ext'  => 'jpg,gif,png,bmp,jpeg'
+            ];
+            $info = $picture->validate($config)->move(ROOT_PATH . 'public' . DS . 'images');
+            if ($info) {
+                $sub_path = str_replace('\\', '/', $info->getSaveName());
+                $picture = '/images/' . $sub_path;
+            } else {
+                return $this->return_message(Code::INVALID, '文件图片格式不对');
+            }
+        }
 
         /* 验证结果 */
         $result = $this->carousel_validate->scene('save')->check($validate_data);
