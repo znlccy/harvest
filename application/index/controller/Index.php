@@ -1,10 +1,74 @@
 <?php
 namespace app\index\controller;
 
-class Index
-{
-    public function index()
-    {
-        return '<style type="text/css">*{ padding: 0; margin: 0; } .think_default_text{ padding: 4px 48px;} a{color:#2E5CD5;cursor: pointer;text-decoration: none} a:hover{text-decoration:underline; } body{ background: #fff; font-family: "Century Gothic","Microsoft yahei"; color: #333;font-size:18px} h1{ font-size: 100px; font-weight: normal; margin-bottom: 12px; } p{ line-height: 1.6em; font-size: 42px }</style><div style="padding: 24px 48px;"> <h1>:)</h1><p> ThinkPHP V5<br/><span style="font-size:30px">十年磨一剑 - 为API开发设计的高性能框架</span></p><span style="font-size:22px;">[ V5.0 版本由 <a href="http://www.qiniu.com" target="qiniu">七牛云</a> 独家赞助发布 ]</span></div><script type="text/javascript" src="http://tajs.qq.com/stats?sId=9347272" charset="UTF-8"></script><script type="text/javascript" src="http://ad.topthink.com/Public/static/client.js"></script><thinkad id="ad_bd568ce7058a1091"></thinkad>';
+use app\index\response\Code;
+use think\Request;
+use app\index\model\Harvest as HarvestModel;
+use app\index\model\Carousel as CarouselModel;
+use app\index\validate\Index as IndexValidate;
+
+class Index extends BasicController {
+
+    /* 声明科技成果模型 */
+    protected $harvest_model;
+
+    /* 声明轮播模型 */
+    protected $carousel_model;
+
+    /* 声明科技成果分页 */
+    protected $harvest_page;
+
+    /* 声明首页验证器 */
+    protected $index_validate;
+
+    /* 声明默认构造函数 */
+    public function __construct(Request $request = null) {
+        parent::__construct($request);
+        $this->harvest_model = new HarvestModel();
+        $this->carousel_model = new CarouselModel();
+        $this->harvest_page = config('pagination');
+        $this->index_validate = new IndexValidate();
+    }
+
+    /* 首页返回数据 */
+    public function index() {
+
+        /* 接收参数 */
+        $page_size = request()->param('page_size', $this->harvest_page['PAGE_SIZE']);
+        $jump_page = request()->param('jump_page', $this->harvest_page['JUMP_PAGE']);
+
+        /* 验证参数 */
+        $validate_data = [
+            'page_size'     => $page_size,
+            'jump_page'     => $jump_page
+        ];
+
+        /* 验证结果 */
+        $result = $this->index_validate->scene('index')->check($validate_data);
+
+        if (true !== $result) {
+            return $this->return_message(Code::INVALID, $this->index_validate->getError());
+        }
+
+        /* 接收参数 */
+        $carousel = $this->carousel_model
+            ->where('status', '=', '1')
+            ->order('id', 'desc')
+            ->limit(4)
+            ->select();
+
+        $harvest = $this->harvest_model
+            ->where(['status' => 1, 'recommend' => 1])
+            ->order('id', 'desc')
+            ->paginate($page_size, false, ['page' => $jump_page]);
+
+        $data = array_merge(['carousel' => $carousel], ['harvest' => $harvest]);
+
+        if ($data) {
+            return $this->return_message(Code::SUCCESS, '获取首页数据成功',$data);
+        } else {
+            return $this->return_message(Code::FAILURE, '获取首页数据失败');
+        }
+
     }
 }
