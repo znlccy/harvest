@@ -123,21 +123,7 @@ class Product extends BasisController {
         $name = request()->param('name');
         $description = request()->param('description');
         $detail = request()->file('detail');
-
-        /* 验证参数 */
-        $validate_data = [
-            'id'            => $id,
-            'name'          => $name,
-            'description'   => $description,
-            'detail'        => $detail
-        ];
-
-        /* 验证结果 */
-        $result = $this->product_validate->scene('save')->check($validate_data);
-
-        if (true !== $result) {
-            return $this->return_message(Code::INVALID, $this->product_validate->getError());
-        }
+        $status = request()->param('status', 0);
 
         /* 移动文件 */
         if ($detail) {
@@ -153,14 +139,38 @@ class Product extends BasisController {
             }
         }
 
+        /* 验证参数 */
+        $validate_data = [
+            'id'            => $id,
+            'name'          => $name,
+            'description'   => $description,
+            'status'        => $status,
+            'detail'        => $detail
+        ];
+
+        /* 验证结果 */
+        $result = $this->product_validate->scene('save')->check($validate_data);
+
+        if (true !== $result) {
+            return $this->return_message(Code::INVALID, $this->product_validate->getError());
+        }
+
+
         /* 返回数据 */
         if (empty($id)) {
+            if ($validate_data['status'] !== 0) {
+                $validate_data['status'] = 0;
+            }
             $product = $this->product_model->save($validate_data);
         } else {
             if (empty($validate_data['detail'])) {
                 unset($validate_data['detail']);
             }
-            $product = $this->product_model->save($validate_data, ['id' => $id]);
+            if ($validate_data['status'] !== 0) {
+                $validate_data['status'] = 0;
+            }
+            $validate_data['update_time'] = date('Y-m-d H:i:s',time());
+            $product = $this->product_model->where('id', $id)->update($validate_data);
         }
 
         if ($product) {
@@ -252,19 +262,19 @@ class Product extends BasisController {
         if (empty($product)) {
             return $this->return_message(Code::FAILURE, '产品不存在');
         } else {
-            /* 此处状态为2,3 */
-            if ($status == 1) {
+            /* 此处状态为1,2 */
+            if ($status == 0) {
                 return $this->return_message(Code::FORBIDDEN, '审核状态错误');
             } else {
                 $auditing = $this->product_model->where('id', '=', $id)->update(['status' => $status]);
 
                 if ($auditing) {
 
-                    if ($status == 2) {
-                        return $this->return_message(Code::SUCCESS, '审核成功');
+                    if ($status == 1) {
+                        return $this->return_message(Code::SUCCESS, '审核通过成功');
                     }
-                    if ($status == 3) {
-                        return $this->return_message(Code::FORBIDDEN, '审核失败');
+                    if ($status == 2) {
+                        return $this->return_message(Code::FORBIDDEN, '审核拒绝成功');
                     }
                 } else {
                     return $this->return_message(Code::FAILURE, '已经审核了');
