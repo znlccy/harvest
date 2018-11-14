@@ -28,11 +28,6 @@ class Permission extends BasisValidate {
         'jump_page'     => 'number'
     ];
 
-    //验证消息
-    protected $message = [
-
-    ];
-
     //验证字段
     protected $field = [
         'id'            => '权限主键',

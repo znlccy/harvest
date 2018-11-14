@@ -40,6 +40,8 @@ class Harvest extends BasisController {
         $id = request()->param('id');
         $name = request()->param('name');
         $description = request()->param('description');
+        $status = request()->param('status');
+        $recommend = request()->param('recommend');
         $create_start = request()->param('create_start');
         $create_end = request()->param('create_end');
         $update_start = request()->param('update_start');
@@ -52,6 +54,8 @@ class Harvest extends BasisController {
             'id'            => $id,
             'name'          => $name,
             'description'   => $description,
+            'status'        => $status,
+            'recommend'     => $recommend,
             'create_start'  => $create_start,
             'create_end'    => $create_end,
             'update_start'  => $update_start,
@@ -82,6 +86,36 @@ class Harvest extends BasisController {
             $conditions['description'] = ['like', '%' . $description . '%'];
         }
 
+        if (is_null($status)) {
+            $conditions['status'] = ['in',[0,1]];
+        } else {
+            switch ($status) {
+                case 0:
+                    $conditions['status'] = $status;
+                    break;
+                case 1:
+                    $conditions['status'] = $status;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if (is_null($recommend)) {
+            $conditions['recommend'] = ['in',[0,1]];
+        } else {
+            switch ($recommend) {
+                case 0:
+                    $conditions['recommend'] = $recommend;
+                    break;
+                case 1:
+                    $conditions['recommend'] = $recommend;
+                    break;
+                default:
+                    break;
+            }
+        }
+
         if ($create_start && $create_end) {
             $conditions['create_time'] = ['between time', [$create_start, $create_end]];
         }
@@ -110,6 +144,8 @@ class Harvest extends BasisController {
         $id = request()->param('id');
         $name = request()->param('name');
         $description = request()->param('description');
+        $status = request()->param('status', 0);
+        $recommend = request()->param('recommend',0);
         $picture = request()->file('picture');
         $rich_text = request()->param('rich_text');
 
@@ -132,6 +168,8 @@ class Harvest extends BasisController {
             'id'            => $id,
             'name'          => $name,
             'description'   => $description,
+            'status'        => $status,
+            'recommend'     => $recommend,
             'rich_text'     => $rich_text,
             'picture'       => $picture
         ];
@@ -151,6 +189,12 @@ class Harvest extends BasisController {
                 unset($validate_data['picture']);
             }
             $harvest = $this->harvest_model->save($validate_data, ['id' => $id]);
+        }
+
+        if ($harvest) {
+            return $this->return_message(Code::SUCCESS, '数据操作成功');
+        } else {
+
         }
     }
 
@@ -180,31 +224,6 @@ class Harvest extends BasisController {
         } else {
             return $this->return_message(Code::FAILURE, '获取成果详情失败');
         }
-
-        /* 上一页数据 */
-        /*$prev = Db::table('tb_review')
-            ->field('richtext,recommend',true)
-            ->where('id', '<', $id)
-            ->order('id desc')
-            ->find();*/
-
-        /* 下一页数据 */
-        /*$next = Db::table('tb_review')
-            ->field('richtext,recommend',true)
-            ->where('id', '>', $id)
-            ->order('id asc')
-            ->find();*/
-
-        /* 最新活动回顾 */
-        /*$lastreview = Db::table('tb_review')
-            ->field('richtext,recommend',true)
-            ->where('id', '<>', $id)
-            ->order('recommend', 'desc')
-            ->order('id', 'desc')
-            ->limit(10)
-            ->select();
-
-        $data = array_merge(['prev' => $prev], ['next' => $next], ['detail' => $return_review], ['lastreview' => $lastreview]);*/
     }
 
     /* 成果删除 */

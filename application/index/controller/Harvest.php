@@ -86,13 +86,38 @@ class Harvest extends BasicController {
             return $this->return_message(Code::INVALID, $this->harvest_validate->getError());
         }
 
+        /* 上一页数据 */
+        $prev = $this->harvest_model
+            ->field('id, name, description, picture, rich_text, create_time, update_time')
+            ->where('id', '<', $id)
+            ->order('id desc')
+            ->find();
+
+        /* 下一页数据 */
+        $next = $this->harvest_model
+            ->field('id, name, description, picture, rich_text, create_time, update_time')
+            ->where('id', '>', $id)
+            ->order('id asc')
+            ->find();
+
+        /* 最新科技成果 */
+        $last_harvest = $this->harvest_model
+            ->field('id, name, description, picture, rich_text, create_time, update_time')
+            ->where('id', '<>', $id)
+            ->order('id', 'desc')
+            ->limit(10)
+            ->select();
+
+
         /* 返回结果 */
         $harvest = $this->harvest_model
             ->where('id', $id)
             ->find();
 
-        if ($harvest) {
-            return $this->return_message(Code::SUCCESS, '获取成果详情成功', $harvest);
+        $data = array_merge(['prev' => $prev], ['next' => $next], ['detail' => $harvest], ['last_harvest' => $last_harvest]);
+
+        if ($data) {
+            return $this->return_message(Code::SUCCESS, '获取成果详情成功', $data);
         } else {
             return $this->return_message(Code::FAILURE, '获取成果详情失败');
         }
