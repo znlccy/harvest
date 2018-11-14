@@ -16,4 +16,14 @@ class Harvest extends BasicModel {
 
     /* 对应的表 */
     protected $table = 'tb_harvest';
+
+    /* 加密富文本 */
+    public function setRichTextAttr($value) {
+        return htmlspecialchars($value);
+    }
+
+    /* 解密富文本 */
+    public function getRichTextAttr($value) {
+        return htmlspecialchars_decode($value);
+    }
 }
