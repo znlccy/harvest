@@ -2,10 +2,11 @@
 /**
  * Created by PhpStorm.
  * User: Administrator
- * Date: 2018/8/15
- * Time: 12:03
+ * Date: 2018/9/6
+ * Time: 10:53
  * Comment: 管理员验证器
  */
+
 namespace app\admin\validate;
 
 class Admin extends BasisValidate {
@@ -29,11 +30,6 @@ class Admin extends BasisValidate {
         'create_ip'     => 'max:255',
         'page_size'     => 'number',
         'jump_page'     => 'number'
-    ];
-
-    //验证消息
-    protected $message = [
-
     ];
 
     //验证字段

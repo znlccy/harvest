@@ -2,10 +2,11 @@
 /**
  * Created by PhpStorm.
  * User: Administrator
- * Date: 2018/8/15
- * Time: 12:03
+ * Date: 2018/9/6
+ * Time: 10:55
  * Comment: 角色验证器
  */
+
 namespace app\admin\validate;
 
 class Role extends BasisValidate {
@@ -25,11 +26,6 @@ class Role extends BasisValidate {
         'update_end'    => 'date',
         'page_size'     => 'number',
         'jump_page'     => 'number'
-    ];
-
-    //验证消息
-    protected $message = [
-
     ];
 
     //验证字段

@@ -2,24 +2,23 @@
 /**
  * Created by PhpStorm.
  * User: Administrator
- * Date: 2018/8/15
- * Time: 12:03
+ * Date: 2018/9/6
+ * Time: 10:52
  * Comment: 权限模型
  */
+
 namespace app\admin\model;
 
 class Permission extends BasisModel {
 
-    /**
-     * 自动写入和读取时间
-     * @var string
-     */
+    /* 读存时间 */
     protected $autoWriteTimestamp = 'datetime';
 
-    /**
-     * 关联的数据表
-     * @var string
-     */
+    /* 对应的表 */
     protected $table = 'tb_permission';
 
+    /* 关联的表 */
+    public function roles() {
+        return $this->belongsToMany('Role', 'tb_role_permission', 'role_id', 'permission_id');
+    }
 }

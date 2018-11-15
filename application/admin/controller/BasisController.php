@@ -9,6 +9,7 @@
 
 namespace app\admin\controller;
 
+use gmars\rbac\Rbac;
 use think\Controller;
 use think\Request;
 use think\Session;

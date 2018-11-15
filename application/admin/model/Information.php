@@ -2,25 +2,34 @@
 /**
  * Created by PhpStorm.
  * User: Administrator
- * Date: 2018/8/15
- * Time: 13:35
- * Comment: 通知消息模型
+ * Date: 2018/10/9
+ * Time: 14:46
+ * Comment: 消息控制器
  */
 
 namespace app\admin\model;
 
 class Information extends BasisModel {
 
-    /**
-     * 自动写入和读取时间
-     * @var string
-     */
+    /* 读存时间 */
     protected $autoWriteTimestamp = 'datetime';
 
-    /**
-     * 关联的数据表
-     * @var string
-     */
+    /* 对应的表 */
     protected $table = 'tb_information';
+
+    /* 关联的表 */
+    public function user() {
+        return $this->belongsToMany('User', 'tb_user_info','user_id','info_id');
+    }
+
+    /* 设置富文本 */
+    public function setRichTextAttr($value) {
+        return htmlspecialchars($value);
+    }
+
+    /* 获取富文本 */
+    public function getRichTextAttr($value) {
+        return htmlspecialchars_decode($value);
+    }
 
 }

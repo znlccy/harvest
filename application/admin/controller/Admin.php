@@ -2,21 +2,23 @@
 /**
  * Created by PhpStorm.
  * User: Administrator
- * Date: 2018/8/15
- * Time: 12:03
+ * Date: 2018/9/6
+ * Time: 10:52
  * Comment: 管理员控制器
  */
+
 namespace app\admin\controller;
 
 use app\admin\model\Admin as AdminModel;
-use app\admin\validate\Admin as AdminValidate;
-use app\admin\model\Role as RoleModel;
 use app\admin\model\AdminRole as AdminRoleModel;
+use app\admin\model\Role as RoleModel;
 use app\admin\model\Sms as SmsModel;
+use app\admin\response\Code;
+use app\admin\validate\Admin as AdminValidate;
+use gmars\rbac\Rbac;
 use think\Request;
 use think\Session;
 use think\Validate;
-use gmars\rbac\Rbac;
 
 class Admin extends BasisController {
 
@@ -82,7 +84,7 @@ class Admin extends BasisController {
         //实例化验证器
         $result   = $this->admin_validate->scene('mobile_login')->check($validate_data);
         if (!$result) {
-            return json(['code' => '401', 'message' => $this->admin_validate->getError()]);
+            return $this->return_message(Code::INVALID, $this->admin_validate->getError());
         }
 
         //实例化模型
@@ -91,22 +93,22 @@ class Admin extends BasisController {
             ->find();
 
         if (empty($admin) ){
-            return json(['code' => '402', 'message' => '登录失败']);
+            return $this->return_message(Code::FORBIDDEN, '登录失败');
         }
 
         //比对短信验证码
         $sms_code = $this->sms_model->where('mobile', '=', $mobile)->find();
 
         if (empty($sms_code)) {
-            return json(['code' => '404', 'message' => '该手机还没有生成注册码']);
+            return $this->return_message(Code::FAILURE, '该手机还没有生成注册码');
         }
 
         if (strtotime($sms_code['expiration_time']) - time() < 0) {
-            return json(['code' => '405', 'message' => '验证码已经过期']);
+            return $this->return_message(Code::EXPIRED, '验证过期');
         }
 
         if ($sms_code['code'] != $code) {
-            return json(['code' => '407', 'message' => '登录失败']);
+            return $this->return_message(Code::FORBIDDEN, '登录失败');
         }
 
         //更新用户登陆记录
@@ -128,7 +130,7 @@ class Admin extends BasisController {
             $this->sms_model->where('mobile', $mobile)->update(['create_time' => date('Y-m-d H:i:s', time())]);
             return json(['code' => '200', 'message' => '登录成功', 'admin_token' => $token, 'real_name' => $admin['real_name']]);
         }else{
-            return json(['code' => '408', 'message' => '登录失败']);
+            return $this->return_message(Code::FORBIDDEN, '登录失败');
         }
     }
 
@@ -162,13 +164,13 @@ class Admin extends BasisController {
 
         //不存在该用户名
         if (empty($admin) ){
-            return json(['code' => '402', 'message' => '登录失败']);
+            return $this->return_message(Code::FORBIDDEN, '登录失败');
         }
 
         //检查是否实名
         if ( !($admin['authentication'] === 1) ){
             $authentication_data = ['mobile'=>$mobile];
-            return json(['code' => '302', 'message' => '需进行手机真实性认证', 'data' => $authentication_data ]);
+            return $this->return_message(Code::AUTH, '需要手机真实性验证', $authentication_data);
         }
 
         Session::set('admin',$admin);
@@ -180,7 +182,7 @@ class Admin extends BasisController {
     /**
      * 管理员列表api接口
      */
-    public function entry() {
+    public function listing() {
         /* 获取客户端提供的数据 */
         $id = request()->param('id');
         $mobile = request()->param('mobile');
@@ -218,7 +220,7 @@ class Admin extends BasisController {
         //实例化验证器
         $result = $this->admin_validate->scene('entry')->check($validate_data);
         if (!$result) {
-            return json(['code' => '401', 'message' => $this->admin_validate->getError()]);
+            return $this->return_message(Code::INVALID, $this->admin_validate->getError());
         }
 
         //过滤条件
@@ -270,11 +272,11 @@ class Admin extends BasisController {
                 $query->withField("id, name");
             }])->paginate($page_size, false, ['page' => $jump_page]);
 
-        return json([
-            'code'      => '200',
-            'message'   => '获取列表成功',
-            'data'      => $admin_data
-        ]);
+        if ($admin_data) {
+            return $this->return_message(Code::SUCCESS, '获取管理员列表成功',$admin_data);
+        } else {
+            return $this->return_message(Code::FAILURE, '获取管理员列表失败');
+        }
     }
 
     /**
@@ -292,10 +294,7 @@ class Admin extends BasisController {
         //验证结果
         $result = $this->admin_validate->scene('detail')->check($validate_data);
         if (!$result) {
-            return json([
-                'code'      => '401',
-                'message'   => $this->admin_validate->getError()
-            ]);
+            return $this->return_message(Code::INVALID, $this->admin_validate->getError());
         }
 
         //返回数据
@@ -458,10 +457,7 @@ class Admin extends BasisController {
             $result = $rbacObj->assignUserRole($id, $role_id);
 
             if ($result) {
-                return json([
-                    'code'      => '200',
-                    'message'   => '更新成功'
-                ]);
+                return $this->return_message(Code::SUCCESS, '更新成功');
             }
         } else {
             /* 添加用户表之后，再添加用户角色表 */
@@ -473,51 +469,27 @@ class Admin extends BasisController {
                 $result = $rbacObj->assignUserRole($uid, $role_id);
 
                 if ($result) {
-                    return json([
-                        'code'      => '200',
-                        'message'   => '添加成功'
-                    ]);
+                    return $this->return_message(Code::SUCCESS, '添加成功');
                 } else {
-                    return json([
-                        'code'      => '403',
-                        'message'   => '添加失败'
-                    ]);
+                    return $this->return_message(Code::FAILURE, '添加失败');
                 }
             } else {
-                return json([
-                    'code'      => '403',
-                    'message'   => '添加失败'
-                ]);
+                return $this->return_message(Code::FAILURE, '添加失败');
             }
         }
     }
 
-    /**
-     * 角色下拉列表api接口
-     * @return \think\response\Json
-     * @throws \think\db\exception\DataNotFoundException
-     * @throws \think\db\exception\ModelNotFoundException
-     * @throws \think\exception\DbException
-     */
+    /* 角色下来列表 */
     public function spinner() {
         $roles = $this->role_model->where('status', '=', '1')->field('id, name')->select();
         if (!empty($roles)) {
-            return json([
-                'code'          => '200',
-                'message'       => '获取角色列表成功',
-                'data'          => $roles
-            ]);
+            return $this->return_message(Code::SUCCESS, '获取角色列表成功', $roles);
         } else {
-            return json([
-                'code'          => '404',
-                'message'       => '获取角色列表失败'
-            ]);
+            return $this->return_message(Code::FAILURE, '获取角色列表失败');
         }
     }
 
-    /**
-     * 管理员个人信息api接口
-     */
+    /* 管理员个人信息 */
     public function info() {
         //获取用户手机
         $admin = Session::get('admin');
@@ -527,22 +499,13 @@ class Admin extends BasisController {
         //返回数据
         if ($id) {
             $admin_data = $this->admin_model->where('id', $id)->find();
-            return json([
-                'code'          => '200',
-                'message'       => '查询数据成功',
-                'data'          => $admin_data
-            ]);
+            return $this->return_message(Code::SUCCESS, '查询数据成功',$admin_data);
         } else {
-            return json([
-                'code'          => '404',
-                'message'       => '查询数据失败',
-            ]);
+            return $this->return_message(Code::FAILURE, '查询数据失败');
         }
     }
 
-    /**
-     * 管理员修改密码api接口
-     */
+    /* 管理员修改密码 */
     public function change_password() {
 
         //获取客户端提交过来的数据
@@ -558,10 +521,7 @@ class Admin extends BasisController {
         //验证结果
         $result = $this->admin_validate->scene('info')->check($validate_data);
         if (!$result) {
-            return json([
-                'code'      => '401',
-                'message'   => $this->admin_validate->getError()
-            ]);
+            return $this->return_message(Code::INVALID, $this->admin_validate->getError());
         }
 
         //获取Session中的数据
@@ -574,35 +534,21 @@ class Admin extends BasisController {
                 'password'      => md5($password)
             ];
             $this->admin_model->save($update_data, ['id' => $id]);
-            return json([
-                'code'      => '200',
-                'message'   => '更新密码成功'
-            ]);
+            return $this->return_message(Code::SUCCESS, '更新密码成功');
         } else {
-            return json([
-                'code'      => '404',
-                'message'   => '更新密码失败'
-            ]);
+            return $this->return_message(Code::FAILURE, '更新密码失败');
         }
     }
 
-    /**
-     * 管理员退出api接口
-     * @return \think\response\Json
-     */
+    /* 管理员退出 */
     public function logout() {
         Session::delete('admin');
         Session::delete('admin_token');
         if (Session::get('admin') == null && Session::get('admin_token') == null) {
-            return json([
-                'code'      => '200',
-                'message'   => '管理员退出成功'
-            ]);
+            return $this->return_message(Code::SUCCESS, '管理员退出成功');
         } else {
-            return json([
-                'code'      => '401',
-                'message'   => '管理员退出失败'
-            ]);
+            return $this->return_message(Code::FAILURE, '管理员退出失败');
         }
     }
+
 }
