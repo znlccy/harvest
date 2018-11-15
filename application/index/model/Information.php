@@ -18,12 +18,14 @@ class Information extends Model {
      */
     protected $table = 'tb_information';
 
-    public function setRichtextAttr($value)
+    /* 设置富文本 */
+    public function setRichTextAttr($value)
     {
         return htmlspecialchars($value);
     }
 
-    public function getRichtextAttr($value)
+    /* 获取富文本 */
+    public function getRichTextAttr($value)
     {
         return htmlspecialchars_decode($value);
     }

@@ -52,13 +52,13 @@ class BasisController extends Controller {
                 // 获取客户端传来的token
                 $client_token = $request->header('access-token');
                 if ( !(!empty($client_token) && $this->check_token($client_token)) ) {
-                    return $this->return_message(401, '请先登录系统'); // session('admin_token')
+                    return $this->returnMsg(401, '请先登录系统'); // session('admin_token')
                 }
                 $this->user_id = session('admin.id'); // 从session中获取  session('admin.id')
                 //检查管理员操作权限
                 $this->checkPriv();
             } else {
-                return $this->return_message(401, '请先登录系统');
+                return $this->returnMsg(401, '请先登录系统');
             }
         }
     }
@@ -95,9 +95,26 @@ class BasisController extends Controller {
             $rbacObj = new Rbac();
             $rbacObj->cachePermission($this->user_id);
             if (!$rbacObj->can($this->permission)) {
-                return $this->return_message(404, '没有操作权限');
+                return $this->returnMsg(404, '没有操作权限');
             }
         }
+    }
+
+    /**
+     * @param $code
+     * @param string $msg
+     * @param array $data
+     */
+    public function returnMsg($code, $msg = '', $data = []) {
+
+        $return_data['code'] = $code;
+        $return_data['message'] = $msg;
+        if (!empty($data)) {
+            $return_data['data'] = $data;
+        }
+
+        echo json_encode($return_data);
+        die;
     }
 
     /* 返回信息 */

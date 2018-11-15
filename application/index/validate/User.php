@@ -19,6 +19,7 @@ class User extends BasicValidate {
         'mobile'            => 'regex:mobile|length:11',
         'password'          => 'length:8,25|alphaDash',
         'verify'            => 'captcha',
+        'type'              => 'number|in:1,2',
         'code'              => 'length:6|number',
         'confirm_pass'      => 'length:8,25|alphaDash|confirm:password',
         'encrypted_str'     => 'max:255',
@@ -32,15 +33,11 @@ class User extends BasicValidate {
         'old_password'      => 'length:8,25|alphaDash'
     ];
 
-    //验证消息
-    protected $message = [
-
-    ];
-
     //验证领域
     protected $field = [
         'mobile'            => '用户手机账号',
         'password'          => '用户密码',
+        'type'              => '用户类型',
         'confirm_pass'      => '确认密码',
         'code'              => '短信验证码',
         'verify'            => '图形验证码',
@@ -59,7 +56,7 @@ class User extends BasicValidate {
     //验证场景
     protected $scene = [
         'login'             => ['mobile' => 'require|length:11|regex:mobile', 'password' => 'require|length:8,25|alphaDash', 'verify' => 'require|captcha'],
-        'register'          => ['mobile' => 'require|length:11|regex:mobile', 'password' => 'require|length:8,25|alphaDash', 'verify' => 'require|captcha', 'code' => 'require|length:6|number'],
+        'register'          => ['mobile' => 'require|length:11|regex:mobile', 'password' => 'require|length:8,25|alphaDash', 'verify' => 'require|captcha', 'code' => 'require|length:6|number', 'type' => 'require|number|in:1,2'],
         'recover_pass'      => ['mobile' => 'require|length:11|regex:mobile', 'code' => 'require|length:6|number', 'verify' => 'require|captcha'],
         'change_pass'       => ['password' => 'require|length:8,25|alphaDash', 'confirm_pass' => 'require|length:8,25|alphaDash|confirm:password', 'encrypted_str' => 'require'],
         'modify_info'       => ['username' => 'require|length:2,25', 'email' => 'require|email', 'company' => 'require|max:255', 'duty' => 'require|max:255', 'industry' => 'require|max:255'],

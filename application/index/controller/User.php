@@ -9,13 +9,11 @@
 namespace app\index\controller;
 
 use app\index\model\User as UserModel;
-use app\index\model\UserAccelerator;
+use app\index\response\Code;
 use app\index\validate\User as UserValidate;
 use app\index\model\Sms as SmsModel;
 use app\index\model\UserInformation as UserInformationModel;
 use app\index\model\Information as InformationModel;
-use app\index\model\UserAccelerator as UserAcceleratorModel;
-use app\index\model\Accelerator as AcceleratorModel;
 use think\Config;
 use think\Request;
 use think\Session;
@@ -42,22 +40,10 @@ class User extends BasicController {
     protected $user_info_model;
 
     /**
-     * 声明用户活动模型
-     * @var
-     */
-    protected $user_accelerator_model;
-
-    /**
      * 声明消息模型
      * @var
      */
     protected $information_model;
-
-    /**
-     * 声明活动模型
-     * @var
-     */
-    protected $accelerator_model;
 
     /**
      * 声明用户验证器
@@ -82,8 +68,6 @@ class User extends BasicController {
         $this->sms_model = new SmsModel();
         $this->user_info_model = new UserInformationModel();
         $this->information_model = new InformationModel();
-        $this->user_accelerator_model = new UserAcceleratorModel();
-        $this->accelerator_model = new AcceleratorModel();
         $this->user_page = config('pagination');
         $this->user_validate = new UserValidate();
     }
@@ -139,6 +123,7 @@ class User extends BasicController {
      */
     public function register() {
         /* 获取客户端提交过来的数据 */
+        $type = request()->param('type');
         $mobile = request()->param('mobile');
         $password = request()->param('password');
         $verify = request()->param('verify');
@@ -146,6 +131,7 @@ class User extends BasicController {
 
         /* 验证规则 */
         $validate_data = [
+            'type'          => $type,
             'mobile'        => $mobile,
             'password'      => $password,
             'verify'        => $verify,
@@ -589,92 +575,6 @@ class User extends BasicController {
     }
 
     /**
-     * 获取加速器详情
-     * @return \think\response\Json
-     * @throws \think\db\exception\DataNotFoundException
-     * @throws \think\db\exception\ModelNotFoundException
-     * @throws \think\exception\DbException
-     */
-    public function detail() {
-
-        //获取客户端提交过来的数据
-        $id = request()->param('id');
-
-        //验证数据
-        $validate_data = [
-            'id'        => $id
-        ];
-
-        //验证结果
-        $result = $this->user_validate->scene('detail')->check($validate_data);
-        if (!$result) {
-            return json([
-                'code'      => '401',
-                'message'   => ''
-            ]);
-        }
-
-        //返回客户端结果
-        $accelerator = $this->accelerator_model->where('id', $id)->find();
-        if ($accelerator) {
-            return  json([
-                'code'      => '200',
-                'message'   => '查询加速器成功',
-                'data'      => $accelerator
-            ]);
-        } else {
-            return  json([
-                'code'      => '404',
-                'message'   => '查询加速器失败，数据库中不存在'
-            ]);
-        }
-    }
-
-    /**
-     * 取消沙龙报名
-     */
-    public function cancel(){
-        /* 获取客户端提供的数据 */
-        $user_id = Session::get('user.id');
-
-        /* 需要取消的活动ID */
-        $id = request()->param('id');
-
-        /* 验证规则 */
-        $validate_data = [
-            'id'        => $id,
-        ];
-
-        //验证结果
-        $result   = $this->user_validate->scene('cancel')->check($validate_data);
-        if (!$result) {
-            return json(['code' => '401', 'message' => $this->user_validate->getError()]);
-        }
-
-        //确认是否报名
-        $user_active = $this->user_accelerator_model
-            -> where('user_id', '=', $user_id)
-            -> where('accelerator_id', '=', $id)
-            -> select();
-
-        if ( empty($user_active) ){
-            return json(['code' => '401', 'message' => '未报名']);
-        }
-
-        $result = $this->user_accelerator_model
-            -> where('user_id', '=', $user_id)
-            -> where('accelerator_id', '=', $id)
-            -> delete();
-        if ($result) {
-            // 活动人数-1
-            $this->accelerator_model->where(['id' => $id])->setDec('register');
-            return json(['code' => '200', 'message' => '提交成功']);
-        } else {
-            return json(['code' => '404', 'message' => '报名失败']);
-        }
-    }
-
-    /**
      * 用户成员列表
      * @return mixed|void
      * @throws \think\db\exception\DataNotFoundException
@@ -748,5 +648,72 @@ class User extends BasicController {
             ]);
         }
     }
+
+    /* 成果提交 */
+    public function product() {
+
+        /* 接收参数 */
+        $user_id = session('user.id');
+        $name = request()->param('name');
+        $description = request()->param('description');
+        $detail = request()->file('detail');
+
+        /* 验证参数 */
+        $validate_data = [
+            'name'          => $name,
+            'description'   => $description,
+            'detail'        => $detail
+        ];
+
+        /* 验证结果 */
+        $result = $this->user_validate->scene('product')->check($validate_data);
+
+        if (true !== $result) {
+            return $this->return_message(Code::INVALID, $this->user_validate->getError());
+        }
+
+        /* 判断用户是否登录 */
+        if (is_null($user_id) || empty($user_id)) {
+            return $this->return_message(Code::INVALID, '用户还没有登录');
+        }
+
+        $user = $this->user_model->where('id', $user_id)->find();
+
+        if (empty($user)) {
+            return $this->return_message(Code::FAILURE, '用户不存在');
+        }
+
+    }
+
+    /* 发布的科技成果 */
+    public function product_list() {
+
+        $user_id = session('user.id');
+
+        if (is_null($user_id) || empty($user_id)) {
+            return $this->return_message(Code::FAILURE, '用户还没登录');
+        }
+
+        /* 接收参数 */
+        $page_size = request()->param('page_size', $this->user_page['PAGE_SIZE']);
+        $jump_page = request()->param('jump_page', $this->user_page['JUMP_PAGE']);
+
+        /* 验证参数 */
+        $validate_data = [
+            'page_size'     => $page_size,
+            'jump_page'     => $jump_page
+        ];
+
+        /* 验证结果 */
+        $result = $this->user_validate->scene('product_listing')->check($validate_data);
+
+        if (true !== $result) {
+            return $this->return_message(Code::INVALID, $this->user_validate->getError());
+        }
+
+
+
+    }
+
 
 }

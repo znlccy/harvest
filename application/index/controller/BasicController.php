@@ -49,10 +49,10 @@ class BasicController extends Controller {
                 // 获取客户端传来的token
                 $client_token = $request->header('access_token');
                 if ( !(!empty($client_token) && $this->check_token($client_token)) ) {
-                    return $this->return_message(401, '请先登录系统');
+                    return $this->return_msg(401, '请先登录系统');
                 }
             } else {
-                return $this->return_message(401, '请先登录系统');
+                return $this->return_msg(401, '请先登录系统');
             }
         }
     }
@@ -78,6 +78,24 @@ class BasicController extends Controller {
      */
     public function listener() {
         Hook::listen('response_send');
+    }
+
+    /**
+     * 返回状态信息
+     * @param $code
+     * @param string $msg
+     * @param array $data
+     */
+    public function return_msg($code, $msg = '', $data = []) {
+
+        $return_data['code'] = $code;
+        $return_data['message'] = $msg;
+        if ( !empty($data) ){
+            $return_data['data'] = $data;
+        }
+
+        echo json_encode($return_data);
+        die;
     }
 
     /* 返回信息 */
