@@ -2,18 +2,20 @@
 /**
  * Created by PhpStorm.
  * User: Administrator
- * Date: 2018/8/15
- * Time: 12:03
+ * Date: 2018/9/6
+ * Time: 10:52
  * Comment: 权限控制器
  */
+
 namespace app\admin\controller;
 
-use app\admin\model\AdminRole as AdminRoleModel;
 use app\admin\model\Permission as PermissionModel;
+use app\admin\model\AdminRole as AdminRoleModel;
+use app\admin\response\Code;
 use app\admin\validate\Permission as PermissionValidate;
+use gmars\rbac\Rbac;
 use think\Request;
 use think\Session;
-use gmars\rbac\Rbac;
 
 class Permission extends BasisController {
 
@@ -38,7 +40,7 @@ class Permission extends BasisController {
         $this->permission_page = config('pagination');
     }
 
-    /* 生成节点*/
+    /* 权限节点 */
     public function node() {
         //获得权限节点
         $admin = Session::get('admin');
@@ -51,6 +53,7 @@ class Permission extends BasisController {
             ->join('tb_permission tp', 'tp.id = rp.permission_id')
             ->select();
 
+        //生成权限树
         $permission_ids = [];
         $nodes = [];
         foreach ($node as $value) {
@@ -60,8 +63,7 @@ class Permission extends BasisController {
             $permission_ids[] = $value['permission_id'];
         }
 
-        //生成权限树
-        $tree = $this->buildTrees($node, 0);
+        $tree = $this->build_trees($node, 0);
 
         //返回数据
         return json([
@@ -69,10 +71,11 @@ class Permission extends BasisController {
             'message'   => '获得权限节点成功',
             'data'      => $tree
         ]);
+
     }
 
     /* 权限列表 */
-    public function entry() {
+    public function listing() {
         /* 获取客户端提供的数据 */
         $id = request()->param('id');
         $status = request()->param('status');
@@ -164,14 +167,16 @@ class Permission extends BasisController {
             ->order('id', 'asc')
             ->paginate($page_size, false, ['page' => $jump_page]);
 
-        return json([
-            'code'      => '200',
-            'message'   => '获取角色名称成功',
-            'data'      => $role
-        ]);
+        if ($role) {
+            return $this->return_message(Code::SUCCESS, '获取角色名称成功',$role);
+        } else {
+            return $this->return_message(Code::FAILURE, '获取角色名称失败');
+        }
     }
 
+    /* 权限添加更新 */
     public function save() {
+
         /* 获取客户端提交的数据 */
         $id = request()->param('id');
         $name = request()->param('name');
@@ -199,7 +204,7 @@ class Permission extends BasisController {
         //验证结果
         $result   = $this->permission_validate->scene('save')->check($validate_data);
         if (!$result) {
-            return json(['code' => '401', 'message' => $this->permission_validate->getError()]);
+            return $this->return_message(Code::INVALID, $this->permission_validate->getError());
         }
 
         //返回结果
@@ -219,10 +224,7 @@ class Permission extends BasisController {
             ];
             $update_result = $rbac->editPermission($update_data);
             if ($update_result) {
-                return json([
-                    'code'      => '200',
-                    'message'   => '更新权限成功'
-                ]);
+                return $this->return_message(Code::SUCCESS, '更新权限成功');
             }
         } else {
             $data = [
@@ -238,21 +240,12 @@ class Permission extends BasisController {
             ];
             $add_result = $rbac->createPermission($data);
             if ($add_result) {
-                return json([
-                    'code'      => '200',
-                    'message'   => '添加权限成功'
-                ]);
+                return $this->return_message(Code::SUCCESS, '添加权限成功');
             }
         }
     }
 
-    /**
-     * 获取权限详情api接口
-     * @return \think\response\Json
-     * @throws \think\db\exception\DataNotFoundException
-     * @throws \think\db\exception\ModelNotFoundException
-     * @throws \think\exception\DbException
-     */
+    /* 权限详情 */
     public function detail() {
         //获取客户端提交的数据
         $id = request()->param('id');
@@ -265,33 +258,21 @@ class Permission extends BasisController {
         //验证结果
         $result = $this->permission_validate->scene('detail')->check($validate_data);
         if (!$result) {
-            return json([
-                'code'      => '401',
-                'message'   => $this->permission_validate->getError()
-            ]);
+            return $this->return_message(Code::INVALID, $this->permission_validate->getError());
         }
 
         //返回数据
-        $service = $this->permission_model->where('id', $id)->find();
-        if ($service) {
-            return json([
-                'code'      => '200',
-                'message'   => '查询数据成功',
-                'data'      => $service
-            ]);
+        $permission = $this->permission_model->where('id', $id)->find();
+        if ($permission) {
+            return $this->return_message(Code::SUCCESS, '获取权限详情成功', $permission);
         } else {
-            return json([
-                'code'      => '404',
-                'message'   => '查询数据失败,数据不存在'
-            ]);
+            return $this->return_message(Code::FAILURE, '获取权限详情失败');
         }
     }
 
-    /**
-     * 删除权限api接口
-     * @return \think\response\Json
-     */
+    /* 删除权限 */
     public function delete() {
+
         //获取客户端提交过来的数据
         $id = request()->param('id');
 
@@ -303,65 +284,49 @@ class Permission extends BasisController {
         //验证结果
         $result = $this->permission_validate->scene('delete')->check($validate_data);
         if (!$result) {
-            return json([
-                'code'      => '401',
-                'message'   => $this->permission_validate->getError()
-            ]);
+            return $this->return_message(Code::INVALID, $this->permission_validate->getError());
         }
 
         //返回结果
-        $delete = $this->permission_model->where('id', $id)->delete();
-        if ($delete) {
-            return json([
-                'code'      => '200',
-                'message'   => '删除数据成功'
-            ]);
+        if ($id == 1) {
+            return $this->return_message(Code::FORBIDDEN, '超级管理员不允许删除');
         } else {
-            return json([
-                'code'      => '401',
-                'message'   => '删除数据失败'
-            ]);
+            $delete = $this->permission_model->where('id', $id)->delete();
+            if ($delete) {
+                return $this->return_message(Code::SUCCESS, '删除权限成功');
+            } else {
+                return $this->return_message(Code::FAILURE, '删除权限失败');
+            }
         }
     }
 
-    /**
-     * 实现无限极分类
-     * @param $arr
-     * @param $pid
-     * @param $step
-     * @return array
-     */
-    private function getTree($arr,$pid,$step){
+
+    /* 实现无限极分类 */
+    private function get_tree($arr,$pid,$step){
         global $tree;
         foreach($arr as $key=>$val) {
             if($val['pid'] == $pid) {
                 $flg = str_repeat('└―',$step);
                 $val['name'] = $flg.$val['name'];
                 $tree[] = $val;
-                $this->getTree($arr , $val['id'] ,$step+1);
+                $this->get_tree($arr , $val['id'] ,$step+1);
             }
         }
         return $tree;
     }
 
-    /**
-     * 生成树结构函数
-     * @param $data
-     * @param $pId
-     * @return array
-     */
-    public function buildTrees($data, $pId)
+    /* 生成树结构 */
+    public function build_trees($data, $pId)
     {
         $tree_nodes = array();
         foreach($data as $k => $v)
         {
             if($v['pid'] == $pId)
             {
-                $v['child'] = $this->buildTrees($data, $v['id']);
+                $v['child'] = $this->build_trees($data, $v['id']);
                 $tree_nodes[] = $v;
             }
         }
         return $tree_nodes;
     }
-
 }
