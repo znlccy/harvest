@@ -25,4 +25,8 @@ return [
     'log_write'    => [],
     // 应用结束
     'app_end'      => [],
+    //实现跨域访问问题
+    'response_send'=> [
+        'app\\index\\behavior\\Cross'
+    ]
 ];
