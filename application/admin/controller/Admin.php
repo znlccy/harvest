@@ -299,12 +299,16 @@ class Admin extends BasisController {
         }
 
         //返回数据
-        $service = $this->admin_model->where('id', $id)->find();
-        if ($service) {
+        $admin = AdminModel::where('id', $id)
+            ->with(['role' => function ($query) {
+                $query->withField("pivot");
+            }])->field('id,mobile,nick_name,email,real_name,status,create_time,update_time,authentication,login_ip,login_time')->find();
+
+        if ($admin) {
             return json([
                 'code'      => '200',
                 'message'   => '查询数据成功',
-                'data'      => $service
+                'data'      => $admin
             ]);
         } else {
             return json([

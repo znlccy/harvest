@@ -43,15 +43,192 @@ class User extends BasisController {
         $username = request()->param('username');
         $mobile = request()->param('mobile');
         $duty = request()->param('duty');
+        $department = request()->param('department');
+        $phone = request()->param('phone');
+        $wechat = request()->param('wechat');
+        $email = request()->param('email');
+        $link = request()->param('link');
+        /* 创业者筛选字段 */
+        $enterprise = request()->param('enterprise');
+        $introduce = request()->param('introduce');
+        $revenue = request()->param('revenue');
+        $address = request()->param('address');
+        /* 合作者筛选字段 */
+        $company = request()->param('company');
+        $location = request()->param('location');
+        $invest_industry = request()->param('invest_industry');
+        $invest_address = request()->param('invest_address');
+        $text_domain = request()->param('text_domain');
+        $create_start = request()->param('create_start');
+        $create_end = request()->param('create_end');
+        $update_start = request()->param('update_start');
+        $update_end = request()->param('update_end');
+        $page_size = request()->param('page_size',$this->user_page['PAGE_SIZE']);
+        $jump_page = request()->param('jump_page', $this->user_page['JUMP_PAGE']);
 
         /* 验证参数 */
         $validate_data = [
-
+            'id'            => $id,
+            'type'          => $type,
+            'status'        => $status,
+            'username'      => $username,
+            'mobile'        => $mobile,
+            'duty'          => $duty,
+            'department'    => $department,
+            'phone'         => $phone,
+            'wechat'        => $wechat,
+            'email'         => $email,
+            'link'          => $link,
+            'enterprise'    => $enterprise,
+            'introduce'     => $introduce,
+            'revenue'       => $revenue,
+            'address'       => $address,
+            'company'       => $company,
+            'location'      => $location,
+            'invest_industry'=> $invest_industry,
+            'invest_address'=> $invest_address,
+            'text_domain'   => $text_domain,
+            'create_start'  => $create_start,
+            'create_end'    => $create_end,
+            'update_start'  => $update_start,
+            'update_end'    => $update_end,
+            'page_size'     => $page_size,
+            'jump_page'     => $jump_page
         ];
 
         /* 验证结果 */
+        $result = $this->user_validate->scene('listing')->check($validate_data);
 
+        if (true !== $result) {
+            return $this->return_message(Code::INVALID, $this->user_validate->getError());
+        }
+
+        /* 筛选条件 */
+        $conditions = [];
+
+        if ($id) {
+            $conditions['id'] = $id;
+        }
+
+        if ($type) {
+            $conditions['type'] = $type;
+        }
+
+        if (is_null($status)) {
+            $conditions['status'] = ['in',[0,1]];
+        } else {
+            switch ($status) {
+                case 0:
+                    $conditions['status'] = $status;
+                    break;
+                case 1:
+                    $conditions['status'] = $status;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if ($username) {
+            $conditions['username'] = ['like', '%'. $username .'%'];
+        }
+
+        if ($mobile) {
+            $conditions['mobile'] = ['like', '%' . $mobile .'%'];
+        }
+
+        if ($duty) {
+            $conditions['duty'] = ['like', '%' . $duty . '%'];
+        }
+
+        if ($department) {
+            $conditions['department'] = ['like', '%' . $department . '%'];
+        }
+
+        if ($phone) {
+            $conditions['phone'] = ['like', '%' . $phone .'%'];
+        }
+
+        if ($wechat) {
+            $conditions['wechat'] = ['like', '%' . $wechat . '%'];
+        }
+
+        if ($email) {
+            $conditions['email'] = ['like', '%' .$email . '%'];
+        }
+
+        if ($link) {
+            $conditions['link'] = ['like', '%' . $link . '%'];
+        }
+
+        if ($enterprise) {
+            $conditions['enterprise'] = ['like', '%' . $enterprise . '%'];
+        }
+
+        if ($introduce) {
+            $conditions['introduce'] = ['like', '%' . $introduce . '%'];
+        }
+
+        if (is_null($revenue)) {
+            $conditions['revenue'] = ['in',[0,1]];
+        } else {
+            switch ($revenue) {
+                case 0:
+                    $conditions['revenue'] = $revenue;
+                    break;
+                case 1:
+                    $conditions['revenue'] = $revenue;
+                    break;
+                default:
+                    break;
+            }
+        }
+
+        if ($address) {
+            $conditions['address'] = ['like', '%' . $address . '%'];
+        }
+
+        if ($company) {
+            $conditions['company'] = ['like', '%' . $company . '%'];
+        }
+
+        if ($location) {
+            $conditions['location'] = ['like', '%' . $location . '%'];
+        };
+
+        if ($invest_industry) {
+            $conditions['invest_industry'] = ['like', '%' . $invest_industry . '%'];
+        }
+
+        if ($invest_address) {
+            $conditions['invest_address'] = ['like', '%' . $invest_address . '%'];
+        }
+
+        if ($text_domain) {
+            $conditions['text_domain'] = ['like', '%' . $text_domain . '%'];
+        }
+
+        if ($create_start && $create_end) {
+            $conditions['create_time'] = ['between time', [$create_start, $create_end]];
+        }
+
+        if ($update_start && $update_end) {
+            $conditions['update_time'] = ['between time', [$update_start, $update_end]];
+        }
+
+        /* 返回结果 */
+        $user = $this->user_model
+            ->where($conditions)
+            ->order('id', 'asc')
+            ->paginate($page_size, false, ['page' => $jump_page]);
+
+        if ($user) {
+            return $this->return_message(Code::SUCCESS, '获取用户列表成功', $user);
+        } else {
+            return $this->return_message(Code::FAILURE, '获取用户列表失败');
+        }
     }
+
 
     /* 用户添加更新 */
     public function save() {
