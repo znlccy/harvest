@@ -53,13 +53,12 @@ class Harvest extends BasicController {
             return $this->return_message(Code::INVALID, $this->harvest_validate->getError());
         }
 
+
         /* 返回数据 */
         $harvest = $this->harvest_model
             ->order('id', 'desc')
             ->where('status', '=', '1')
             ->paginate($page_size, false, ['page' => $jump_page]);
-
-        /* 加入上一页和下一页和最新列表 */
 
         if ($harvest) {
             return $this->return_message(Code::SUCCESS, '获取成果列表成功', $harvest);

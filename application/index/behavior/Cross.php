@@ -9,6 +9,8 @@
 
 namespace app\index\behavior;
 
+use think\Request;
+
 class Cross {
     /**
      * 响应发送
