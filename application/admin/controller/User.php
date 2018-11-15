@@ -115,13 +115,16 @@ class User extends BasisController {
         }
 
         if (is_null($status)) {
-            $conditions['status'] = ['in',[0,1]];
+            $conditions['status'] = ['in',[0,1,2]];
         } else {
             switch ($status) {
                 case 0:
                     $conditions['status'] = $status;
                     break;
                 case 1:
+                    $conditions['status'] = $status;
+                    break;
+                case 2:
                     $conditions['status'] = $status;
                     break;
                 default:
@@ -295,7 +298,7 @@ class User extends BasisController {
                     'username'      => 'require|max:120',
                     'password'      => 'require|alphaDash',
                     'confirm_password'=> 'confirm:password',
-                    'mobile'        => 'require|max:32',
+                    'mobile'        => 'require|max:32|unique:tb_user',
                     'duty'          => 'require|max:255',
                     'department'    => 'require|max:300',
                     'phone'         => 'require|max:60',
@@ -389,7 +392,7 @@ class User extends BasisController {
                     'username'      => 'require|max:120',
                     'password'      => 'require|alphaDash',
                     'confirm_password'=> 'confirm:password',
-                    'mobile'        => 'require|max:32',
+                    'mobile'        => 'require|max:32|unique:tb_user',
                     'duty'          => 'require|max:255',
                     'department'    => 'require|max:300',
                     'phone'         => 'require|max:60',
