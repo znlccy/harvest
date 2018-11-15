@@ -333,11 +333,11 @@ class Product extends BasisController {
     }
 
     /* 用户下拉列表 */
-    public function user_list() {
+    public function user_listing() {
 
         /* 返回数据 */
         $user = $this->user_model
-            ->where('id', 'asc')
+            ->order('id', 'asc')
             ->where('status', '=', '1')
             ->select();
 
