@@ -293,6 +293,7 @@ class Product extends BasisController {
         $pid = request()->param('pid');
         $uid = request()->param('uid');
 
+
         /* 验证数据 */
         $validate_data = [
             'pid'       => $pid,
@@ -338,7 +339,7 @@ class Product extends BasisController {
         /* 返回数据 */
         $user = $this->user_model
             ->order('id', 'asc')
-            ->where('status', '=', '1')
+            ->where(['status' => 1, 'type' => 2])
             ->select();
 
         if ($user) {
