@@ -122,6 +122,7 @@ class Product extends BasisController {
         $id = request()->param('id');
         $name = request()->param('name');
         $description = request()->param('description');
+        $recommend = request()->param('recommend');
         $detail = request()->file('detail');
         $status = request()->param('status', 0);
 
@@ -145,6 +146,7 @@ class Product extends BasisController {
             'name'          => $name,
             'description'   => $description,
             'status'        => $status,
+            'recommend'     => $recommend,
             'detail'        => $detail
         ];
 
@@ -274,7 +276,7 @@ class Product extends BasisController {
                         return $this->return_message(Code::SUCCESS, '审核通过成功');
                     }
                     if ($status == 2) {
-                        return $this->return_message(Code::FORBIDDEN, '审核拒绝成功');
+                        return $this->return_message(Code::SUCCESS, '审核拒绝成功');
                     }
                 } else {
                     return $this->return_message(Code::FAILURE, '已经审核了');
@@ -291,14 +293,14 @@ class Product extends BasisController {
         $pid = request()->param('pid');
         $uid = request()->param('uid');
 
-        /* 验证参数 */
+        /* 验证数据 */
         $validate_data = [
-            'pid'        => $pid,
+            'pid'       => $pid,
             'uid'       => $uid
         ];
 
         /* 验证结果 */
-        $result = $this->product_validate->scene('distribute')->check($validate_data);
+        $result = $this->product_validate->scene('allocation')->check($validate_data);
 
         if (true !== $result) {
             return $this->return_message(Code::INVALID, $this->product_validate->getError());
@@ -308,7 +310,7 @@ class Product extends BasisController {
         $user_product = $this->user_product_model->where(['user_id' => $uid, 'product_id' => $pid])->find();
 
         if ($user_product) {
-            return $this->return_message(Code::AUTH, '该产品已经分配给该用户了');
+            return $this->return_message(Code::INVALID, '该产品已经分配给该用户了');
         } else {
             $user = $this->user_model->where('id', $uid)->find();
             if (is_null($user) || empty($user)) {
@@ -320,7 +322,7 @@ class Product extends BasisController {
                 return $this->return_message(Code::FAILURE, '不存在该产品');
             }
 
-            $distribute = $product->users()->save($user);
+            $distribute = $this->user_product_model->save(['user_id' => $uid, 'product_id' => $pid]);
 
             if ($distribute) {
                 return $this->return_message(Code::SUCCESS, '分配成果成功');

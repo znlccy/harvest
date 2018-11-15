@@ -37,7 +37,20 @@ class User extends BasisController {
     public function listing() {
 
         /* 接收参数 */
-        $id = request()->param('');
+        $id = request()->param('id');
+        $type = request()->param('type');
+        $status = request()->param('status');
+        $username = request()->param('username');
+        $mobile = request()->param('mobile');
+        $duty = request()->param('duty');
+
+        /* 验证参数 */
+        $validate_data = [
+
+        ];
+
+        /* 验证结果 */
+
     }
 
     /* 用户添加更新 */
@@ -71,7 +84,7 @@ class User extends BasisController {
                 $validate_entrepreneur = [
                     'id'            => $id,
                     'type'          => $type,
-                    'status'        => 0,
+                    'status'        => $status,
                     'enterprise'    => $enterprise,
                     'introduce'     => $introduce,
                     'industry'      => $industry,
@@ -164,7 +177,7 @@ class User extends BasisController {
                 $validate_collaborator = [
                     'id'            => $id,
                     'type'          => $type,
-                    'status'        => 0,
+                    'status'        => $status,
                     'company'       => $company,
                     'location'      => $location,
                     'capital_body'  => $capital_body,
@@ -320,22 +333,22 @@ class User extends BasisController {
         ];
 
         /* 验证结果 */
-        $result = $this->product_validate->scene('auditor')->check($validate_data);
+        $result = $this->user_validate->scene('auditor')->check($validate_data);
 
         if (true !== $result) {
-            return $this->return_message(Code::INVALID, $this->product_validate->getError());
+            return $this->return_message(Code::INVALID, $this->user_validate->getError());
         }
 
         /* 返回数据 */
-        $product = $this->product_model->where('id', $id)->find();
-        if (empty($product)) {
-            return $this->return_message(Code::FAILURE, '产品不存在');
+        $user = $this->user_model->where('id', $id)->find();
+        if (empty($user)) {
+            return $this->return_message(Code::FAILURE, '用户不存在');
         } else {
             /* 此处状态为1,2 */
             if ($status == 0) {
                 return $this->return_message(Code::FORBIDDEN, '审核状态错误');
             } else {
-                $auditing = $this->product_model->where('id', '=', $id)->update(['status' => $status]);
+                $auditing = $this->user_model->where('id', '=', $id)->update(['status' => $status]);
 
                 if ($auditing) {
 
@@ -343,7 +356,7 @@ class User extends BasisController {
                         return $this->return_message(Code::SUCCESS, '审核通过成功');
                     }
                     if ($status == 2) {
-                        return $this->return_message(Code::FORBIDDEN, '审核拒绝成功');
+                        return $this->return_message(Code::SUCCESS, '审核拒绝成功');
                     }
                 } else {
                     return $this->return_message(Code::FAILURE, '已经审核了');
