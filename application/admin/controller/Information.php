@@ -10,6 +10,7 @@
 namespace app\admin\controller;
 
 use app\admin\response\Code;
+use think\Db;
 use think\Request;
 use app\admin\model\Information as InformationModel;
 use app\admin\model\UserInformation as UserInformationModel;
@@ -247,7 +248,7 @@ class Information extends BasisController {
      * 发布人下拉列表
      */
     public function user_listing() {
-        $publishers = $this->admin_model->column('nick_name', 'real_name', 'id');
+        $publishers = Db::table('tb_admin')->column('nick_name', 'id');
         if (!empty($publishers)) {
             return json(['code' => '200', 'message' => '获取列表成功', 'data' => $publishers]);
         } else {
