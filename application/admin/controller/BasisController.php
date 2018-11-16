@@ -29,7 +29,7 @@ class BasisController extends Controller {
     // 无需验证方法
     protected  $except_auth = [
         'Admin' => ['login', 'account_login', 'role', 'mobile_login'],
-        'Information' => ['publisher'],
+        'Information' => ['user_listing','allocation','save'],
         'Service' => ['category'],
         'Image' => ['upload']
     ];
