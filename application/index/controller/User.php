@@ -14,6 +14,8 @@ use app\index\validate\User as UserValidate;
 use app\index\model\Sms as SmsModel;
 use app\index\model\UserInformation as UserInformationModel;
 use app\index\model\Information as InformationModel;
+use app\index\model\Product as ProductModel;
+use app\index\model\UserProduct as UserProductModel;
 use think\Config;
 use think\Request;
 use think\Session;
@@ -38,6 +40,18 @@ class User extends BasicController {
      * @var
      */
     protected $user_info_model;
+
+    /**
+     * 声明产品模型
+     * @var
+     */
+    protected $product_model;
+
+    /**
+     * 用户产品模型
+     * @var
+     */
+    protected $user_product_model;
 
     /**
      * 声明消息模型
@@ -68,6 +82,8 @@ class User extends BasicController {
         $this->sms_model = new SmsModel();
         $this->user_info_model = new UserInformationModel();
         $this->information_model = new InformationModel();
+        $this->product_model = new ProductModel();
+        $this->user_product_model = new UserProductModel();
         $this->user_page = config('pagination');
         $this->user_validate = new UserValidate();
     }
@@ -101,8 +117,7 @@ class User extends BasicController {
             ->find();
 
         $data = [
-            'login_time'        => date("Y-m-d H:s:i", time()),
-            'login_ip'          => request()->ip()
+            'login_time'        => date("Y-m-d H:s:i", time())
         ];
 
         $this->user_model->save($data, ['id' => $user['id']]);
@@ -162,7 +177,9 @@ class User extends BasicController {
         $user_data = [
             'mobile'        => $mobile,
             'password'      => md5($password),
-            'register_time' => date('Y-m-d H:i:s', time())
+            'type'          => $type,
+            'create_time' =>date('Y-m-d H:i:s', time()),
+            'update_time' =>date('Y-m-d H:i:s', time()),
         ];
 
         $register_result =$this->user_model->insertGetId($user_data);
@@ -300,22 +317,16 @@ class User extends BasicController {
      * 个人信息api接口
      */
     public function info() {
+
         // 用户手机号
-        $mobile = session('user.mobile');
+        $mobile = Session::get('user.mobile');
 
         //实例化模型
         $personal = $this->user_model->where('mobile', '=', $mobile)->find();
         if ($personal) {
-            return json([
-                'code'      => '200',
-                'message'   => '查找成功',
-                'data'      => $personal
-            ]);
+            return $this->return_message(Code::SUCCESS, '获取个人信息成功', $personal);
         } else {
-            return json([
-                'code'      => '404',
-                'message'   => '该手机号未注册'
-            ]);
+            return $this->return_message(Code::FAILURE, '该手机号未注册');
         }
     }
 
@@ -345,7 +356,7 @@ class User extends BasicController {
         //实例化验证器
         $result   = $this->user_validate->scene('modify_info')->check($validate_data);
         if (!$result) {
-            return json(['code' => '401', 'message' => $this->user_validate->getError()]);
+            return $this->return_message(Code::INVALID, $this->user_validate->getError());
         }
 
         /* 更新数据 */
@@ -353,9 +364,9 @@ class User extends BasicController {
 
         /* 返回数据 */
         if ($result) {
-            return json(['code' => '200', 'message' => '保存成功']);
+            return $this->return_message(Code::SUCCESS, '保存成功');
         } else {
-            return json(['code' => '402', 'message' => '保存失败，数据库中还没有该用户信息']);
+            return $this->return_message(Code::FAILURE, '保存失败，数据库中还没有该用户信息');
         }
     }
 
@@ -401,15 +412,9 @@ class User extends BasicController {
 
         $result =$this->user_model->where('id', '=', $user_id)->update($data);
         if ($result) {
-            return json([
-                'code'      => '200',
-                'message'   => '更新成功'
-            ]);
+            return $this->return_message(Code::SUCCESS, '更新成功');
         } else {
-            return json([
-                'code'      => '403',
-                'message'   => '更新失败'
-            ]);
+            return $this->return_message(Code::FAILURE, '更新失败');
         }
     }
 
@@ -508,11 +513,7 @@ class User extends BasicController {
             $this->user_info_model->insert(['user_id' => $user_id, 'info_id' => $id, 'status' => 1]);
         }
 
-        return json([
-            'code'      => '200',
-            'message'   => '查询信息成功',
-            'data'      => $information
-        ]);
+        return $this->return_message(Code::SUCCESS, '查询信息成功', $information);
     }
 
     /**
@@ -523,9 +524,9 @@ class User extends BasicController {
             //删除Session中的数据
             Session::delete('user');
             Session::delete('access_token');
-            return json(['code' => '200', 'message'   => '登出成功']);
+            return $this->return_message(Code::SUCCESS, '登出成功');
         } else {
-            return json(['code' => '200', 'message'   => '您还没登录过']);
+            return $this->return_message(Code::INVALID,'您还没登录过');
         }
     }
 
@@ -536,66 +537,6 @@ class User extends BasicController {
     protected function token($mobile) {
         $now = date('Y-m-d', time());
         $expired = date('Y-m-d', strtotime("+1 day",strtotime(time())));
-    }
-
-    /**
-     * 已经报名加速器api接口
-     */
-    public function apply() {
-
-        /* 获取客户端提供的数据 */
-        $user_id = Session::get('user.id');
-
-        /* 客户端提交过来的分页数据 */
-        $page_size = request()->param('page_size', $this->user_page['PAGE_SIZE']);
-        $jump_page = request()->param('jump_page', $this->user_page['JUMP_PAGE']);
-
-        /* 验证规则 */
-        $validate_data = [
-            'page_size'     => $page_size,
-            'jump_page'     => $jump_page,
-        ];
-
-        //验证结果
-        $result   = $this->user_validate->scene('apply')->check($validate_data);
-        if (!$result) {
-            return json(['code' => '401', 'message' => $this->user_validate->getError()]);
-        }
-
-        $data = $this->user_accelerator_model
-            ->alias('ua')
-            ->where('ua.user_id', '=', $user_id)
-            ->join('tb_accelerator a', 'ua.accelerator_id = a.id')
-            ->join('tb_user tu', 'ua.user_id = tu.id')
-            ->field('a.status , a.name, a.id, a.apply_time, tu.mobile')
-            ->paginate($page_size, false, ['page' => $jump_page]);
-
-        return json(['code' => '200', 'message' => '读取成功', 'data' => $data]);
-
-    }
-
-    /**
-     * 用户成员列表
-     * @return mixed|void
-     * @throws \think\db\exception\DataNotFoundException
-     * @throws \think\db\exception\ModelNotFoundException
-     * @throws \think\exception\DbException
-     */
-    public function index() {
-
-        $company = $this->user_group_model->alias('gm')
-            ->order('gm.group_id', 'desc')
-            ->join('tb_user tu', 'gm.user_id = tu.id')
-            ->join('tb_group tg', 'gm.group_id = tg.id')
-            ->select();
-
-        if ($company) {
-            return json([
-                'code'      => '200',
-                'message'   => '获取信息成功',
-                'data'      => $company
-            ]);
-        }
     }
 
     /**
@@ -788,15 +729,33 @@ class User extends BasicController {
     public function product() {
 
         /* 接收参数 */
-        $user_id = session('user.id');
+        $user_id = Session::get('user.id');
+
         $name = request()->param('name');
         $description = request()->param('description');
         $detail = request()->file('detail');
 
+        /* 移动成果详情 */
+        if ($detail) {
+            $config = [
+                'ext'   => 'rar,zip'
+            ];
+            $info = $detail->validate($config)->move(ROOT_PATH . 'public' . DS . 'images');
+            if ($info) {
+                $sub_path = str_replace('\\', '/', $info->getSaveName());
+                $detail = '/images/' . $sub_path;
+            } else {
+                return $this->return_message(Code::INVALID, '上传文件格式必须是Rar和Zip格式');
+            }
+        }
+
         /* 验证参数 */
         $validate_data = [
+            'user_id'       => $user_id,
             'name'          => $name,
             'description'   => $description,
+            'status'        => 0,
+            'recommend'     => 1,
             'detail'        => $detail
         ];
 
@@ -818,10 +777,24 @@ class User extends BasicController {
             return $this->return_message(Code::FAILURE, '用户不存在');
         }
 
+        $product = $this->product_model->save($validate_data);
+        /*$user_product = $this->user_product_model->where(['user_id' => $user_id, 'product_id' => $product_id])->find();*/
+        /*if ($user_product) {
+            return $this->return_message(Code::INVALID, '该用户已经创建该产品了');
+        } else {
+            $product = $this->user_product_model->save(['user_id' => $user_id, 'product_id' => $product_id]);
+        }*/
+
+        if ($product) {
+            return $this->return_message(Code::SUCCESS, '发布成果成功');
+        } else {
+            return $this->return_message(Code::FAILURE, '发布成果失败');
+        }
+
     }
 
     /* 发布的科技成果 */
-    public function product_list() {
+    public function product_listing() {
 
         $user_id = session('user.id');
 
@@ -852,9 +825,97 @@ class User extends BasicController {
             return $this->return_message(Code::INVALID, $this->user_validate->getError());
         }
 
-        $product = $user->products();
+        /*$product = $this->user_product_model
+            ->alias('upm')
+            ->where('upm.user_id', '=', $user_id)
+            ->join('tb_product tp', 'upm.product_id = tp.id')
+            ->paginate($page_size, false, ['page' => $jump_page]);*/
+        $product = $this->product_model
+            ->where(['user_id' => $user_id, 'status' => 1])
+            ->order('id','asc')
+            ->paginate($page_size, false, ['page' => $jump_page]);
 
+        if ($product) {
+            return $this->return_message(Code::SUCCESS, '获取创业者发布的成果列表成功',$product);
+        } else {
+            return $this->return_message(Code::FAILURE, '获取创业者发布的成果列表失败');
+        }
 
+    }
+
+    /* 成果详情 */
+    public function product_detail() {
+
+        /* 获取客户端提供的数据 */
+        $id = request()->param('id');
+        // 用户手机号
+        $user_id = session('user.id');
+
+        /* 验证规则 */
+        $validate_data = [
+            'id'        => $id,
+        ];
+
+        //验证结果
+        $result   = $this->user_validate->scene('product_detail')->check($validate_data);
+        if (!$result) {
+            return $this->return_message(Code::INVALID, $this->user_validate->getError());
+        }
+
+        if (is_null($user_id) || empty($user_id)) {
+            return $this->return_message(Code::FAILURE, '您还没有登录');
+        }
+
+        $product = $this->product_model->where('id', $id)->find();
+
+        if ($product) {
+            return $this->return_message(Code::SUCCESS, '获取成果详情成功',$product);
+        }
+        return $this->return_message(Code::FAILURE, '获取成果详情失败');
+    }
+
+    /* 合作产品列表 */
+    public function cooperate_listing() {
+        $user_id = session('user.id');
+
+        if (is_null($user_id) || empty($user_id)) {
+            return $this->return_message(Code::FAILURE, '用户还没登录');
+        }
+
+        $user = $this->user_model->where('id', $user_id)->find();
+
+        if (empty($user)) {
+            return $this->return_message(Code::FAILURE, '不存在该用户');
+        }
+
+        /* 接收参数 */
+        $page_size = request()->param('page_size', $this->user_page['PAGE_SIZE']);
+        $jump_page = request()->param('jump_page', $this->user_page['JUMP_PAGE']);
+
+        /* 验证参数 */
+        $validate_data = [
+            'page_size'     => $page_size,
+            'jump_page'     => $jump_page
+        ];
+
+        /* 验证结果 */
+        $result = $this->user_validate->scene('product_listing')->check($validate_data);
+
+        if (true !== $result) {
+            return $this->return_message(Code::INVALID, $this->user_validate->getError());
+        }
+
+        $product = $this->user_product_model
+            ->alias('upm')
+            ->where('upm.user_id', '=', $user_id)
+            ->join('tb_product tp', 'upm.product_id = tp.id')
+            ->paginate($page_size, false, ['page' => $jump_page]);
+
+        if ($product) {
+            return $this->return_message(Code::SUCCESS, '获取用户合作的成果列表成功',$product);
+        } else {
+            return $this->return_message(Code::FAILURE, '获取用户合作的成果列表失败');
+        }
     }
 
 }
