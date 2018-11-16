@@ -14,6 +14,7 @@ use think\Request;
 use app\admin\model\Information as InformationModel;
 use app\admin\model\UserInformation as UserInformationModel;
 use app\admin\model\User as UserModel;
+use app\admin\model\Admin as AdminModel;
 use app\admin\validate\Information as InformationValidate;
 
 class Information extends BasisController {
@@ -23,6 +24,9 @@ class Information extends BasisController {
 
     /* 声明用户模型 */
     protected $user_model;
+
+    /* 声明管理员模型 */
+    protected $admin_model;
 
     /* 声明用户消息模型 */
     protected $user_info_model;
@@ -39,6 +43,7 @@ class Information extends BasisController {
         $this->information_model = new InformationModel();
         $this->user_info_model = new UserInformationModel();
         $this->user_model = new UserModel();
+        $this->admin_model = new AdminModel();
         $this->information_validate = new InformationValidate();
         $this->information_page = config('pagination');
     }
@@ -238,65 +243,15 @@ class Information extends BasisController {
         }
     }
 
-    /* 用户下拉列表 */
+    /**
+     * 发布人下拉列表
+     */
     public function user_listing() {
-
-        /* 返回数据 */
-        $user = $this->user_model
-            ->order('id', 'asc')
-            ->where('status', '=', 1)
-            ->select();
-
-        if ($user) {
-            return $this->return_message(Code::SUCCESS, '获取用户下拉列表成功', $user);
+        $publishers = $this->admin_model->column('nick_name', 'real_name', 'id');
+        if (!empty($publishers)) {
+            return json(['code' => '200', 'message' => '获取列表成功', 'data' => $publishers]);
         } else {
-            return $this->return_message(Code::FAILURE, '获取用户列表失败');
-        }
-    }
-
-    /* 消息分配 */
-    public function allocation() {
-
-        /* 接收参数 */
-        $info_id = request()->param('info_id');
-        $user_id = request()->param('user_id');
-
-        /* 验证数据 */
-        $validate_data = [
-            'info_id'       => $info_id,
-            'user_id'       => $user_id
-        ];
-
-        /* 验证结果 */
-        $result = $this->information_validate->scene('allocation')->check($validate_data);
-
-        if (true !== $result) {
-            return $this->return_message(Code::INVALID, $this->information_validate->getError());
-        }
-
-        /* 返回数据 */
-        $user_info = $this->user_info_model->where(['user_id' => $user_id, 'info_id' => $info_id])->find();
-
-        if ($user_info) {
-            return $this->return_message(Code::INVALID, '该消息已经分配给该用户了');
-        } else {
-            $user = $this->user_model->where('id', $user_id)->find();
-            if (is_null($user) || empty($user)) {
-                return $this->return_message(Code::FAILURE, '不存在该用户');
-            }
-
-            $information = $this->information_model->where('id', $info_id)->find();
-            if (is_null($information) || empty($information)) {
-                return $this->return_message(Code::FAILURE, '不存在该消息');
-            }
-
-            $distribute = $this->user_info_model->save(['user_id' => $user_id, 'info_id' => $info_id]);
-
-            if ($distribute) {
-                return $this->return_message(Code::SUCCESS, '分配消息成功');
-            } else {
-                return $this->return_message(Code::FAILURE, '分配消息失败');
-            }
+            return json(['code' => '404', 'message' => '获取列表失败']);
         }
     }
 
