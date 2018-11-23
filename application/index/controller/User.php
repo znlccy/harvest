@@ -918,4 +918,61 @@ class User extends BasicController {
         }
     }
 
+    /* 合作产品详情 */
+    public function cooperate_product_detail() {
+
+        /* 接收参数 */
+        $id = request()->param('id');
+
+        /* 验证参数 */
+        $validate_data = [
+            'id'        => $id
+        ];
+
+        $result = $this->user_validate->scene('cooperate_product_detail')->check($validate_data);
+
+        if (true !== $result) {
+            return $this->return_message(Code::INVALID, $this->user_validate->getError());
+        }
+
+        /* 返回结果 */
+        $product = $this->product_model->where('id', $id)->find();
+
+        if ($product) {
+            return $this->return_message(Code::SUCCESS,'获取合作产品详情成功', $product);
+        } else {
+            return $this->return_message(Code::FAILURE, '获取合作产品详情失败');
+        }
+    }
+
+    /* 合作产品删除 */
+    public function cooperate_product_delete() {
+
+        /* 接收参数 */
+        $id = request()->param('id');
+
+        $user_id = session('user.id');
+
+        /* 验证参数 */
+        $validate_data = [
+            'id'        => $id
+        ];
+
+        /* 验证结果 */
+        $result = $this->user_validate->scene('cooperate_product_delete')->check($validate_data);
+
+        if (true !== $result) {
+            return $this->return_message(Code::INVALID, $this->user_validate->getError());
+        }
+
+        /* 返回结果 */
+        $product = $this->product_model->where(['id' => $id, 'user_id' => $user_id])->delete();
+
+        if ($product) {
+            return $this->return_message(Code::SUCCESS, '删除合作产品详情成功');
+        } else {
+            return $this->return_message(Code::FAILURE, '删除合作产品详情失败');
+        }
+    }
+
 }
